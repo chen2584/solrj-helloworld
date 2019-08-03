@@ -14,11 +14,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Program {
+    final static String DEFAULT_COLLECTION = "localdocs";
     private static void testSearch(BaseCloudSolrClient client) throws IOException, SolrServerException {
         Map<String, String> queryParamsMap = new HashMap<String, String>();
         queryParamsMap.put("q", "name: Foo");
         MapSolrParams queryParams = new MapSolrParams(queryParamsMap);
-        QueryResponse response = client.query("localdocs" ,queryParams);
+        QueryResponse response = client.query(DEFAULT_COLLECTION ,queryParams);
         SolrDocumentList documents = response.getResults();
 
         System.out.println("Found: " + documents.getNumFound() + " documents");
@@ -37,8 +38,14 @@ public class Program {
         doc.addField("age", 14);
         doc.addField("height", 165);
 
-        client.add("localdocs", doc);
-        client.commit("localdocs"); // Indexed documents must be committed
+        client.add(DEFAULT_COLLECTION, doc);
+        client.commit(DEFAULT_COLLECTION); // Indexed documents must be committed
+    }
+
+    private static void testDelete(BaseCloudSolrClient client) throws  IOException, SolrServerException {
+//        client.deleteById(DEFAULT_COLLECTION, "2584");
+        client.deleteByQuery(DEFAULT_COLLECTION, "id:2584");
+        client.commit(DEFAULT_COLLECTION);  // Delete documents must be committed
     }
 
     public static void main(String args[]) throws Exception {
@@ -48,9 +55,11 @@ public class Program {
         CloudSolrClient.Builder builder = new CloudSolrClient.Builder();
         builder.withZkHost("localhost:9983");
         CloudSolrClient client = builder.build();
-//        client.setDefaultCollection("localdocs");
+//        client.setDefaultCollection(DEFAULT_COLLECTION); // I ignore this for test purpose.
 
         testIndexing(client);
         testSearch(client);
+        testDelete(client);
+        client.close();
     }
 }
